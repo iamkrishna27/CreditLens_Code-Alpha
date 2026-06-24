@@ -16,3 +16,4 @@ python-multipart>=0.0.6
 plaid-python>=1.0.0
 gunicorn>=21.2.0
 email-validator
+bcrypt==3.2.2
