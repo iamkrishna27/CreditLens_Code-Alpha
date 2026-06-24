@@ -62,11 +62,12 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 
-async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
+def run_async_migrations() -> None:
+    """In this scenario we need to create an Engine..."""
 
-    """
+    # ADD THESE TWO LINES:
+    import os
+    config.set_main_option("sqlalchemy.url", os.environ.get("postgresql+asyncpg://finassess_db_user:WUVYbIa3BGzDA973KayWA6QPpmBrpvT2@dpg-d8tonn8js32c73c11ctg-a/finassess_db"))
 
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
