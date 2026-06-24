@@ -62,7 +62,7 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 
-def run_async_migrations() -> None:
+async def run_async_migrations() -> None:
     """In this scenario we need to create an Engine..."""
 
     # ADD THESE TWO LINES:
