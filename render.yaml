@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: finassess-backend
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt && alembic upgrade head"
+    startCommand: "cd backend && gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: finassess-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: PLAID_ENV
+        value: "sandbox"
+      - key: PLAID_CLIENT_ID
+        sync: false
+      - key: PLAID_SECRET
+        sync: false
+
+  - type: web
+    name: finassess-frontend
+    env: static
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: "./frontend/dist"
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: finassess-backend
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  - name: finassess-db
+    databaseName: credit_scoring
+    user: admin
