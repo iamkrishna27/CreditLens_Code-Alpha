@@ -15,4 +15,4 @@ python-jose[cryptography]>=3.3.0
 python-multipart>=0.0.6
 plaid-python>=1.0.0
 gunicorn>=21.2.0
-
+email-validator
