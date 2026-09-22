@@ -18,6 +18,8 @@
 
 ## 📑 Table of Contents
 - [🚀 Core Features](#-core-features)
+- [🧭 System Architecture](#-system-architecture)
+- [🔄 Credit Scoring Workflow](#-credit-scoring-workflow)
 - [🏗️ Architecture & Tech Stack](#-architecture--tech-stack)
 - [⚙️ Local Setup & Installation](#️-local-setup--installation)
 - [🚀 Production Deployment](#-production-deployment)
@@ -46,6 +48,84 @@ CreditLens is built upon **4 Enterprise Pillars**, ensuring a scalable, secure, 
 ### 4. ♾️ DevOps & CI/CD
 - **Automated Workflows**: GitHub Actions CI/CD pipelines trigger on every push, actively validating Python syntax and building the frontend bundle to prevent regressions.
 - **Infrastructure-as-Code (IaC)**: Deployments are driven entirely by a declarative `render.yaml` file orchestrating the PostgreSQL database, the Gunicorn/FastAPI web service, and the static React CDN.
+
+---
+
+## 🧭 System Architecture
+
+```mermaid
+graph TB
+    subgraph Client["💻 Client Layer"]
+        UI["React 19 + Vite<br/>TailwindCSS · Framer Motion"]
+    end
+
+    subgraph API["⚙️ API Layer — FastAPI"]
+        Auth["Auth Service<br/>JWT · bcrypt"]
+        Score["Scoring Engine<br/>Scikit-Learn · SHAP"]
+        Audit["Audit Service<br/>/api/audit/my-logs"]
+    end
+
+    subgraph External["🌐 External Services"]
+        Plaid["Plaid API<br/>Live Bank Data"]
+    end
+
+    subgraph Data["🗄️ Data Layer"]
+        PG[("PostgreSQL<br/>SQLAlchemy · Alembic")]
+        AuditLog[("audit_logs table<br/>Immutable")]
+    end
+
+    UI -->|Axios + JWT| Auth
+    UI -->|Connect Bank| Plaid
+    Plaid -->|Income & Liabilities| Score
+    Auth --> PG
+    Score --> PG
+    Score -->|Every Prediction| AuditLog
+    Audit --> AuditLog
+    UI -->|View History| Audit
+
+    style Client fill:#0F172A,stroke:#61DAFB,color:#fff
+    style API fill:#0F172A,stroke:#22D3EE,color:#fff
+    style External fill:#0F172A,stroke:#F59E0B,color:#fff
+    style Data fill:#0F172A,stroke:#10B981,color:#fff
+```
+
+---
+
+## 🔄 Credit Scoring Workflow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant FE as React Frontend
+    participant BE as FastAPI Backend
+    participant Plaid as Plaid API
+    participant ML as ML Pipeline (SHAP)
+    participant DB as PostgreSQL
+
+    User->>FE: Log in (JWT)
+    FE->>BE: Authenticate request
+    BE-->>FE: Access token
+
+    User->>FE: Connect bank account
+    FE->>Plaid: Initiate Plaid Link (Sandbox)
+    Plaid-->>FE: Access token + account data
+    FE->>BE: Submit verified income/liabilities
+
+    BE->>ML: Feed live data snapshot
+    ML-->>BE: Credit score + SHAP explanation
+
+    BE->>DB: Write immutable audit_log entry
+    Note over DB: user_id · timestamp · model_version<br/>input snapshot · predicted score
+
+    BE-->>FE: Return score + explanation
+    FE-->>User: Display glassmorphic result card
+
+    User->>FE: Request decision history
+    FE->>BE: GET /api/audit/my-logs
+    BE->>DB: Fetch audit trail
+    DB-->>BE: Historical records
+    BE-->>FE: Audit log JSON
+```
 
 ---
 
@@ -128,6 +208,26 @@ The application will be accessible at `http://localhost:5173`.
 ---
 
 ## 🚀 Production Deployment
+
+```mermaid
+graph LR
+    A["👨‍💻 git push<br/>main branch"] --> B["🔍 GitHub Actions<br/>ci.yml"]
+    B --> C{"✅ Checks pass?"}
+    C -->|Yes| D["📦 render.yaml<br/>Blueprint triggers"]
+    C -->|No| E["❌ Build fails<br/>Notify developer"]
+    D --> F[("🗄️ Managed PostgreSQL")]
+    D --> G["🐍 FastAPI backend<br/>via Gunicorn"]
+    D --> H["⚛️ React frontend<br/>Static CDN"]
+
+    style A fill:#1E293B,stroke:#61DAFB,color:#fff
+    style B fill:#1E293B,stroke:#2088FF,color:#fff
+    style C fill:#1E293B,stroke:#F59E0B,color:#fff
+    style D fill:#1E293B,stroke:#10B981,color:#fff
+    style E fill:#1E293B,stroke:#EF4444,color:#fff
+    style F fill:#1E293B,stroke:#316192,color:#fff
+    style G fill:#1E293B,stroke:#005571,color:#fff
+    style H fill:#1E293B,stroke:#61DAFB,color:#fff
+```
 
 CreditLens is configured for zero-downtime deployments via **Render** and **GitHub Actions**.
 
